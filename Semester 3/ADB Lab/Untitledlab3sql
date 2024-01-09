@@ -1,0 +1,150 @@
+
+-- creating tables
+create table projects (
+    id int primary key,
+    name VARCHAR2(30),
+    budget NUMBER(8,2)
+    );
+create table project_hours (
+    project_id int,
+    project_hours int,
+    foreign key (project_id) REFERENCES projects(id)
+);
+
+-- inserting values
+
+insert into projects values(1001,'Area 51',89000);
+insert into projects values(1002,'Tennet',100000);
+insert into projects values(1003,'Meg',999999);
+insert into projects values(1010,'Meg',199999);
+insert into projects values(1004,'Mad Max',123456);
+    
+
+insert into project_hours values(1001,3);  
+insert into project_hours values(1003,4);
+insert into project_hours values(1004,2);
+    
+    
+-- transactions
+
+SET TRANSACTION READ WRITE;
+
+--first Creating a new project with same values of project 1002
+INSERT INTO projects
+   SELECT 1007, name,budget FROM projects
+   WHERE id = 1002;
+
+--now setting all the old ids to new ids in the project hours table
+UPDATE project_hours
+SET project_id = 1007
+WHERE project_id = 1002;
+
+--Delete the original project record
+DELETE FROM projects
+WHERE id=1002;
+
+COMMIT;
+
+--Begin the transaction
+SET TRANSACTION READ WRITE;
+
+--Creating the new project
+INSERT INTO projects
+   SELECT 2008, project_name, project_budget FROM projects
+   WHERE project_id = 1001;
+
+--updating the values in the other table too
+UPDATE project_hours
+SET project_id = 2008
+WHERE project_id = 1001;
+
+--If some mistake made suppose we wanted to update some other information Undo the changes
+ROLLBACK;
+
+select * from projects;
+
+
+---EXCEPTION HANDLING------------------------------------------------------------
+
+DECLARE
+    pname VARCHAR2 (15);
+BEGIN
+    SELECT name INTO pname
+    FROM projects
+    WHERE name = 'Meg';
+    DBMS_OUTPUT.PUT_LINE ('Last name is :' || pname);
+EXCEPTION
+    WHEN TOO_MANY_ROWS THEN
+    DBMS_OUTPUT.PUT_LINE (' Your SELECT statement retrieved multiple
+    rows.');
+END;
+
+
+---CONDITIONAL STATEMENT--------------------------------------------------------
+
+
+DECLARE
+    v_condition BOOLEAN := TRUE; -- Replace with your actual condition
+    
+BEGIN
+    -- Your SQL statements here
+    INSERT INTO projects (id, name , budget) VALUES (1111, 'Giant' , 20000);
+    
+    IF v_condition THEN
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Transaction committed.');
+    ELSE
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Transaction rolled back.');
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+        
+END;
+
+
+
+
+
+-- Create the original table
+CREATE TABLE orders (
+    order_id NUMBER PRIMARY KEY,
+    order_date DATE,
+    customer_id NUMBER,
+    total_amount NUMBER
+);
+
+-- Populate the original table (for demonstration purposes)
+INSERT INTO orders VALUES (1, TO_DATE('2023-01-15', 'YYYY-MM-DD'), 101, 150.00);
+INSERT INTO orders VALUES (2, TO_DATE('2023-02-20', 'YYYY-MM-DD'), 102, 200.00);
+-- ... add more data
+
+-- Perform horizontal partitioning
+CREATE TABLE orders_q1 AS SELECT * FROM orders WHERE order_date BETWEEN TO_DATE('2023-01-01', 'YYYY-MM-DD') AND TO_DATE('2023-03-31', 'YYYY-MM-DD');
+CREATE TABLE orders_q2 AS SELECT * FROM orders WHERE order_date BETWEEN TO_DATE('2023-04-01', 'YYYY-MM-DD') AND TO_DATE('2023-06-30', 'YYYY-MM-DD');
+
+
+
+-- Perform vertical partitioning
+CREATE TABLE orders_info (
+    order_id NUMBER PRIMARY KEY,
+    customer_id NUMBER
+);
+
+CREATE TABLE orders_details (
+    order_id NUMBER PRIMARY KEY,
+    order_date DATE,
+    total_amount NUMBER
+);
+
+-- Populate partitioned tables
+INSERT INTO orders_info SELECT order_id, customer_id FROM orders;
+INSERT INTO orders_details SELECT order_id, order_date, total_amount FROM orders;
+
+
+
+
+

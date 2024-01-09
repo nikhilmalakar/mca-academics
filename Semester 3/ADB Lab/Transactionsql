@@ -1,0 +1,84 @@
+CREATE TABLE project(
+    project_id INT PRIMARY KEY, 
+    project_name VARCHAR2(20),
+    project_budget NUMBER(10)
+);
+
+SELECT * from project; 
+
+
+--Transaction commit
+SET TRANSACTION READ WRITE;
+
+INSERT INTO project
+   SELECT 1007, project_name, project_budget, project_hours FROM project
+   WHERE project_id = 1003;
+
+DELETE FROM project
+WHERE project_id=1003;
+
+COMMIT;
+
+--Transacton rollback-
+SET TRANSACTION READ WRITE;
+
+INSERT INTO project
+   SELECT 1007, project_name, project_budget, project_hours FROM project
+   WHERE project_id = 1003;
+
+DELETE FROM project
+WHERE project_id=1003;
+
+ROLLBACK;
+
+
+
+-- Conditinal statement
+DECLARE
+    v_project_id NUMBER;
+BEGIN
+    SAVEPOINT point1;
+
+    INSERT INTO project (project_id, project_name, project_budget)
+    VALUES (999, 'Food', 7900000);
+
+    SELECT project_id INTO v_project_id
+    FROM project WHERE project_id = 999;
+
+    IF v_project_id = 999 THEN
+        COMMIT;
+    ELSE
+        ROLLBACK TO point1;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK TO point1;
+        RAISE;
+END;
+
+
+--Error Handling
+DECLARE
+    v_project NUMBER;
+BEGIN
+    SAVEPOINT point2;
+
+    INSERT INTO project (project_id, project_name, project_budget)
+    VALUES (9990, 'Invalid Budget', 12345);
+
+    SELECT project_id INTO v_project
+    FROM project WHERE project_id = 9990;
+
+    IF v_project = 9990 THEN
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Insert successful.');
+    ELSE
+        ROLLBACK TO point2;
+        DBMS_OUTPUT.PUT_LINE('Insert failed. Rolling back.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK TO point2;
+        DBMS_OUTPUT.PUT_LINE('An error occurred. Rolling back.');
+        RAISE;
+END;

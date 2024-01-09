@@ -1,0 +1,14 @@
+CREATE TABLE customer(
+    customer_id NUMBER PRIMARY KEY,
+    customer_name VARCHAR2(20),
+    customer_add VARCHAR2(20)
+);
+
+CREATE TABLE orders(
+    order_id NUMBER PRIMARY KEY,
+    customer_id NUMBER,
+    FOREIGN KEY (order_id) REFERENCES customer(customer_id) 
+);
+
+
+
